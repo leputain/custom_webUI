@@ -4,6 +4,23 @@
 
 ### Task
 
+Block all admin settings mutation controls for `security_curator`.
+
+### Changed
+
+- Added a centralized read-only guard in `Settings.svelte` for `security_curator`.
+- Disabled native `input`, `textarea`, `select`, and `button` controls on all non-Security Audit admin settings tabs.
+- Added capture-phase blocking for click/change/input/submit/keyboard interactions before child settings components can call save/update/import/upload handlers.
+- Kept the Security Audit tab exempt from the settings mutation guard so read-only audit refresh/search remains usable.
+- Extended the frontend smoke test to assert the curator settings read-only guard is wired.
+
+### Validation
+
+- Frontend smoke test: `4 passed`.
+- Filtered `svelte-check` diagnostics for `Settings.svelte` and `Settings.security.test.ts`: no diagnostics.
+
+### Task
+
 Complete Security Audit / Audit Log / Versions visibility for admin and `security_curator`.
 
 ### Changed

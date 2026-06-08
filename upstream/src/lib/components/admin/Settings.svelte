@@ -1,11 +1,12 @@
 <script>
-	import { getContext, tick, onMount } from 'svelte';
+	import { getContext, tick, onMount, afterUpdate } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 
-	import { config } from '$lib/stores';
+	import { config, user } from '$lib/stores';
 	import { getBackendConfig } from '$lib/apis';
+	import { isReadOnlyAdmin } from '$lib/utils/rbac';
 	import Database from './Settings/Database.svelte';
 
 	import General from './Settings/General.svelte';
@@ -32,6 +33,95 @@
 	const i18n = getContext('i18n');
 
 	let selectedTab = 'general';
+	/** @type {HTMLElement | undefined} */
+	let settingsContentElement;
+
+	$: readOnlyAdmin = isReadOnlyAdmin($user);
+	$: settingsContentReadOnly = readOnlyAdmin && selectedTab !== 'security';
+
+	const readOnlyGuardAttr = 'data-security-curator-read-only-guard';
+	const originalDisabledAttr = 'data-security-curator-original-disabled';
+	const originalReadOnlyAttr = 'data-security-curator-original-readonly';
+
+	/** @param {Element} control */
+	const isTextControl = (control) =>
+		control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement;
+
+	const applySettingsReadOnlyState = async () => {
+		await tick();
+
+		if (!settingsContentElement) {
+			return;
+		}
+
+		const controls = settingsContentElement.querySelectorAll('input, textarea, select, button');
+		/** @param {Element} control */
+		controls.forEach((control) => {
+			const allowReadOnlyAction = control.closest('[data-readonly-allow]');
+
+			if (settingsContentReadOnly && !allowReadOnlyAction) {
+				if (!control.hasAttribute(readOnlyGuardAttr)) {
+					control.setAttribute(
+						originalDisabledAttr,
+						control.hasAttribute('disabled') ? 'true' : 'false'
+					);
+
+					if (isTextControl(control)) {
+						control.setAttribute(originalReadOnlyAttr, control.readOnly ? 'true' : 'false');
+					}
+				}
+
+				control.setAttribute('disabled', 'true');
+				control.setAttribute(readOnlyGuardAttr, 'true');
+
+				if (isTextControl(control)) {
+					control.readOnly = true;
+				}
+			} else if (control.hasAttribute(readOnlyGuardAttr)) {
+				const wasDisabled = control.getAttribute(originalDisabledAttr) === 'true';
+
+				if (wasDisabled) {
+					control.setAttribute('disabled', 'true');
+				} else {
+					control.removeAttribute('disabled');
+				}
+
+				if (isTextControl(control)) {
+					control.readOnly = control.getAttribute(originalReadOnlyAttr) === 'true';
+				}
+
+				control.removeAttribute(readOnlyGuardAttr);
+				control.removeAttribute(originalDisabledAttr);
+				control.removeAttribute(originalReadOnlyAttr);
+			}
+		});
+	};
+
+	/** @param {EventTarget | null} target */
+	const isReadOnlyBlockedTarget = (target) => {
+		if (!settingsContentReadOnly || !(target instanceof Element)) {
+			return false;
+		}
+
+		if (target.closest('[data-readonly-allow]')) {
+			return false;
+		}
+
+		return Boolean(
+			target.closest(
+				'button, input, textarea, select, [role="button"], [role="switch"], [contenteditable="true"]'
+			)
+		);
+	};
+
+	/** @param {Event} event */
+	const blockReadOnlyInteraction = (event) => {
+		if (isReadOnlyBlockedTarget(event.target)) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			event.stopPropagation();
+		}
+	};
 
 	// Get current tab from URL pathname, default to 'general'
 	$: {
@@ -62,6 +152,7 @@
 		scrollToTab(selectedTab);
 	}
 
+	/** @param {string} tabId */
 	const scrollToTab = (tabId) => {
 		const tabElement = document.getElementById(tabId);
 		if (tabElement) {
@@ -70,7 +161,9 @@
 	};
 
 	let search = '';
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let searchDebounceTimeout;
+	/** @type {Array<{ id: string; title: string; route: string; keywords: string[] }>} */
 	let filteredSettings = [];
 
 	const allSettings = [
@@ -291,6 +384,12 @@
 		setFilteredSettings();
 		// Scroll to the selected tab on mount
 		scrollToTab(selectedTab);
+	});
+
+	$: applySettingsReadOnlyState();
+
+	afterUpdate(() => {
+		applySettingsReadOnlyState();
 	});
 </script>
 
@@ -515,8 +614,20 @@
 		{/each}
 	</div>
 
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
+		bind:this={settingsContentElement}
 		class="flex-1 mt-3 lg:mt-1 px-[16px] lg:pr-[16px] lg:pl-0 overflow-y-scroll scrollbar-hidden"
+		data-admin-settings-read-only={settingsContentReadOnly}
+		on:click|capture={blockReadOnlyInteraction}
+		on:change|capture={blockReadOnlyInteraction}
+		on:input|capture={blockReadOnlyInteraction}
+		on:keydown|capture={(event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				blockReadOnlyInteraction(event);
+			}
+		}}
+		on:submit|capture={blockReadOnlyInteraction}
 	>
 		{#if selectedTab === 'general'}
 			<General
@@ -538,7 +649,11 @@
 		{:else if selectedTab === 'evaluations'}
 			<Evaluations />
 		{:else if selectedTab === 'integrations'}
-			<Integrations />
+			<Integrations
+				saveSettings={() => {
+					toast.success($i18n.t('Settings saved successfully!'));
+				}}
+			/>
 		{:else if selectedTab === 'documents'}
 			<Documents
 				on:save={async () => {

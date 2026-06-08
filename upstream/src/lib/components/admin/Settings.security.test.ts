@@ -13,6 +13,17 @@ describe('admin security settings wiring', () => {
 		expect(settings).toContain('<Security />');
 	});
 
+	it('blocks mutation controls across admin settings for security_curator', () => {
+		const settings = read('./Settings.svelte');
+
+		expect(settings).toContain('isReadOnlyAdmin');
+		expect(settings).toContain("selectedTab !== 'security'");
+		expect(settings).toContain("querySelectorAll('input, textarea, select, button')");
+		expect(settings).toContain("control.setAttribute('disabled', 'true')");
+		expect(settings).toContain('blockReadOnlyInteraction');
+		expect(settings).toContain('on:submit|capture={blockReadOnlyInteraction}');
+	});
+
 	it('renders audit status, audit log, and versions blocks', () => {
 		const security = read('./Settings/Security.svelte');
 
