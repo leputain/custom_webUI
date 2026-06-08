@@ -235,6 +235,7 @@ class AuditLoggingMiddleware:
         '/api/v1/auths/add',
         '/api/v1/users/default/permissions',
         '/api/v1/admin/security/audit/status',
+        '/api/v1/admin/security/audit/logs',
         '/api/v1/admin/security/versions',
     }
     ALWAYS_LOG_PREFIXES = (

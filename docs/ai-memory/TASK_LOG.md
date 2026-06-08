@@ -4,6 +4,40 @@
 
 ### Task
 
+Complete Security Audit / Audit Log / Versions visibility for admin and `security_curator`.
+
+### Changed
+
+- Added read-only `GET /api/v1/admin/security/audit/logs`.
+- Added safe audit log file reading from the configured `AUDIT_LOGS_FILE_PATH` only, with limit/offset, optional filters, invalid-JSON tolerance, and centralized redaction.
+- Added `/audit/logs` to semantic audit always-log endpoints.
+- Connected frontend `getAuditLogs`.
+- Renamed the admin settings tab to `Security Audit`.
+- Expanded `Settings/Security.svelte` to show Audit Status, Audit Log table, and Versions.
+- Added Russian translations for the new Security Audit labels.
+- Added frontend smoke test for Security Audit settings wiring.
+- Expanded backend security audit tests for audit status/logs/versions RBAC, absent files, invalid JSON, redaction, path traversal resistance, and limit capping.
+
+### Validation
+
+- Dockerized targeted pytest: `19 passed`.
+- Frontend smoke test: `3 passed`.
+- Dockerized `py_compile` for changed backend modules: passed.
+- Filtered `svelte-check` diagnostics for changed frontend files: no diagnostics.
+- `npm run build`: passed once after the Security Audit UI change; a later repeat after adding ru-RU translations hit a native Vite/Node `Trace/breakpoint trap` during dependency transform while targeted tests and JSON validation still passed.
+
+### Notes
+
+- Full `npm run check` still fails on existing upstream-wide diagnostics unrelated to this change (`9655 errors and 274 warnings`).
+- Running dockerized pytest against the bind-mounted workspace deletes tracked `backend/open_webui/static/*` files as a side effect; those files were restored before commit.
+
+### Remaining Risks
+
+- Audit log viewer reads the configured current log file; rotated compressed audit logs are not browsed.
+- Frontend tests are smoke/static wiring tests because the project has no Svelte component testing harness configured.
+
+### Task
+
 Investigate local UI responsiveness after the customized build.
 
 ### Changed

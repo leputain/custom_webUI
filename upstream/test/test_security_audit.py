@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
+
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 
@@ -299,7 +302,9 @@ def test_audit_retention_config_is_applied(monkeypatch, tmp_path):
 
     logger_module.start_logger()
 
-    audit_file_call = next(call for call in add_calls if call.get('rotation') == logger_module.AUDIT_LOG_FILE_ROTATION_SIZE)
+    audit_file_call = next(
+        call for call in add_calls if call.get('rotation') == logger_module.AUDIT_LOG_FILE_ROTATION_SIZE
+    )
     assert audit_file_call['retention'] == '7 days'
 
 
@@ -310,3 +315,165 @@ def test_audit_retention_days_parser_defaults_invalid_values():
     assert parse_audit_log_retention_days('') == 365
     assert parse_audit_log_retention_days('invalid') == 365
     assert parse_audit_log_retention_days('-1') == 365
+
+
+def _build_security_router_app(monkeypatch, tmp_path):
+    from open_webui.routers import security as security_router
+
+    audit_log_path = tmp_path / 'audit.log'
+    monkeypatch.setattr(security_router, 'AUDIT_LOGS_FILE_PATH', str(audit_log_path))
+    monkeypatch.setattr(security_router, 'AUDIT_LOG_LEVEL', 'REQUEST_RESPONSE')
+    monkeypatch.setattr(security_router, 'ENABLE_AUDIT_LOGS_FILE', True)
+    monkeypatch.setattr(security_router, 'ENABLE_AUDIT_STDOUT', False)
+    monkeypatch.setattr(security_router, 'AUDIT_LOG_FILE_ROTATION_SIZE', '10MB')
+    monkeypatch.setattr(security_router, 'AUDIT_LOG_RETENTION_DAYS', 365)
+    monkeypatch.setattr(security_router, 'AUDIT_INCLUDED_PATHS', [])
+    monkeypatch.setattr(security_router, 'AUDIT_EXCLUDED_PATHS', [])
+    monkeypatch.setattr(security_router, 'ENABLE_AUDIT_GET_REQUESTS', False)
+    monkeypatch.setattr(security_router, 'MAX_BODY_LOG_SIZE', 2048)
+    monkeypatch.setattr(security_router, 'OFFLINE_MODE', True)
+    monkeypatch.setattr(security_router, 'ENABLE_VERSION_UPDATE_CHECK', True)
+
+    async def _security_read_user(request: Request):
+        auth = request.headers.get('Authorization', '')
+        if auth == 'Bearer admin-token':
+            return DummyUser(id='admin-id', email='admin@example.com', name='Admin', role='admin')
+        if auth == 'Bearer curator-token':
+            return DummyUser(id='curator-id', email='curator@example.com', name='Curator', role='security_curator')
+        if auth in {'Bearer user-token', 'Bearer pending-token'}:
+            raise HTTPException(status_code=403, detail='Forbidden')
+        raise HTTPException(status_code=401, detail='Not authenticated')
+
+    app = FastAPI()
+    app.state.config = SimpleNamespace(
+        ENABLE_OLLAMA_API=False,
+        OLLAMA_BASE_URLS=[],
+        OLLAMA_API_CONFIGS={},
+        OPENAI_API_BASE_URLS=[],
+    )
+    app.dependency_overrides[security_router.get_admin_or_security_curator_user] = _security_read_user
+    app.include_router(security_router.router, prefix='/api/v1/admin/security')
+    return app, audit_log_path
+
+
+def test_security_audit_status_rbac(monkeypatch, tmp_path):
+    app, _ = _build_security_router_app(monkeypatch, tmp_path)
+    client = TestClient(app)
+
+    assert (
+        client.get('/api/v1/admin/security/audit/status', headers={'Authorization': 'Bearer admin-token'}).status_code
+        == 200
+    )
+    assert (
+        client.get('/api/v1/admin/security/audit/status', headers={'Authorization': 'Bearer curator-token'}).status_code
+        == 200
+    )
+    assert (
+        client.get('/api/v1/admin/security/audit/status', headers={'Authorization': 'Bearer user-token'}).status_code
+        == 403
+    )
+    assert (
+        client.get('/api/v1/admin/security/audit/status', headers={'Authorization': 'Bearer pending-token'}).status_code
+        == 403
+    )
+
+
+def test_security_audit_logs_absent_file_returns_empty(monkeypatch, tmp_path):
+    app, _ = _build_security_router_app(monkeypatch, tmp_path)
+    response = TestClient(app).get(
+        '/api/v1/admin/security/audit/logs',
+        headers={'Authorization': 'Bearer curator-token'},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['items'] == []
+    assert body['file_exists'] is False
+    assert body['total_returned'] == 0
+
+
+def test_security_audit_logs_skip_invalid_json_and_redact(monkeypatch, tmp_path):
+    app, audit_log_path = _build_security_router_app(monkeypatch, tmp_path)
+    audit_log_path.write_text(
+        '\n'.join(
+            [
+                json.dumps(
+                    {
+                        'timestamp': 1760000000,
+                        'event_type': 'auth.login.success',
+                        'outcome': 'success',
+                        'actor': {'id': 'admin-id', 'role': 'admin', 'email': 'admin@example.com'},
+                        'request_object': {'password': 'secret-password'},
+                        'response_object': {'token': 'secret-token', 'api_key': 'sk-secret'},
+                    }
+                ),
+                'not-json',
+            ]
+        ),
+        encoding='utf-8',
+    )
+
+    response = TestClient(app).get(
+        '/api/v1/admin/security/audit/logs',
+        headers={'Authorization': 'Bearer admin-token'},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['file_exists'] is True
+    assert body['total_returned'] == 1
+    assert body['items'][0]['request_object']['password'] == '********'
+    assert body['items'][0]['response_object']['token'] == '********'
+    assert body['items'][0]['response_object']['api_key'] == '********'
+    assert 'secret-password' not in str(body)
+    assert 'secret-token' not in str(body)
+    assert 'sk-secret' not in str(body)
+
+
+def test_security_audit_logs_limit_is_capped(monkeypatch, tmp_path):
+    app, audit_log_path = _build_security_router_app(monkeypatch, tmp_path)
+    audit_log_path.write_text(
+        '\n'.join(json.dumps({'timestamp': idx, 'event_type': 'test.event'}) for idx in range(1005)),
+        encoding='utf-8',
+    )
+
+    response = TestClient(app).get(
+        '/api/v1/admin/security/audit/logs?limit=5000',
+        headers={'Authorization': 'Bearer admin-token'},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['limit'] == 1000
+    assert body['total_returned'] == 1000
+
+
+def test_security_audit_logs_does_not_accept_path_traversal(monkeypatch, tmp_path):
+    app, audit_log_path = _build_security_router_app(monkeypatch, tmp_path)
+    audit_log_path.write_text(json.dumps({'event_type': 'configured.file'}) + '\n', encoding='utf-8')
+
+    response = TestClient(app).get(
+        '/api/v1/admin/security/audit/logs?path=/etc/passwd',
+        headers={'Authorization': 'Bearer admin-token'},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['file_exists'] is True
+    assert body['items'][0]['event_type'] == 'configured.file'
+    assert 'root:' not in str(body)
+
+
+def test_security_versions_rbac_and_offline_mode(monkeypatch, tmp_path):
+    app, _ = _build_security_router_app(monkeypatch, tmp_path)
+    client = TestClient(app)
+
+    admin_response = client.get('/api/v1/admin/security/versions', headers={'Authorization': 'Bearer admin-token'})
+    curator_response = client.get('/api/v1/admin/security/versions', headers={'Authorization': 'Bearer curator-token'})
+    user_response = client.get('/api/v1/admin/security/versions', headers={'Authorization': 'Bearer user-token'})
+
+    assert admin_response.status_code == 200
+    assert curator_response.status_code == 200
+    assert user_response.status_code == 403
+    assert admin_response.json()['offline_mode'] is True
+    assert admin_response.json()['latest_available_version'] is None

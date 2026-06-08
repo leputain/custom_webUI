@@ -243,9 +243,9 @@
 		},
 		{
 			id: 'security',
-			title: 'Security',
+			title: 'Security Audit',
 			route: '/admin/settings/security',
-			keywords: ['security', 'audit', 'versions', 'cve', 'retention', 'logs']
+			keywords: ['security', 'audit', 'audit log', 'versions', 'cve', 'retention', 'logs']
 		},
 		{
 			id: 'db',
@@ -328,7 +328,7 @@
 		<!-- {$i18n.t('Audio')} -->
 		<!-- {$i18n.t('Images')} -->
 		<!-- {$i18n.t('Pipelines')} -->
-		<!-- {$i18n.t('Security')} -->
+		<!-- {$i18n.t('Security Audit')} -->
 		<!-- {$i18n.t('Database')} -->
 		{#each filteredSettings as tab (tab.id)}
 			<a

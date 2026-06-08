@@ -8,11 +8,11 @@
 ## Next
 
 - Define the first UI customization target.
-- Run `npm run check` and `npm run build`.
+- Fix or baseline existing upstream-wide `npm run check` diagnostics; current run reports thousands of pre-existing TypeScript/Svelte diagnostics unrelated to the Security Audit UI change.
 - Rebuild and rescan the hardened Docker image after the semantic audit changes.
 - Rebuild and rescan the hardened Docker image after the `security_curator` changes.
 - Exercise the new audit endpoints against a real running Open WebUI instance.
-- Run `npm install`, then `npm run check`, `npm run test:frontend`, and `npm run build` for the security-curator UI changes.
+- Investigate the intermittent native Vite/Node `Trace/breakpoint trap` seen on a repeat `npm run build`; the first build passed and targeted Vitest smoke coverage now passes.
 - Expand frontend read-only coverage across every admin settings subsection; several secret-bearing config panels intentionally remain admin-only pending redaction review.
 - Add broader backend integration tests against real Open WebUI routers and DB fixtures for curator access to users, groups, analytics, and settings pages.
 - Decide model backend: Ollama, OpenAI-compatible gateway, OpenRouter, or mixed.

@@ -125,3 +125,17 @@ Reusing the `admin` role with frontend-only disabled controls.
 
 Impact:
 GET admin endpoints that expose non-secret operational data can use `get_admin_or_security_curator_user`. POST/PUT/PATCH/DELETE endpoints and secret-bearing export/config mutation routes remain `get_admin_user`. The frontend hides or disables common mutation controls for `security_curator`, but backend 403 enforcement remains the primary control.
+
+## 2026-06-08: Audit Log Viewer Reads Only the Configured File
+
+Decision:
+Expose audit log viewing through `GET /api/v1/admin/security/audit/logs`, reading only `AUDIT_LOGS_FILE_PATH` from server configuration.
+
+Reason:
+The admin UI needs a read-only Audit Log view, but accepting a client-supplied file path would create path traversal and arbitrary file disclosure risk.
+
+Alternatives considered:
+Allowing a `path` query parameter or browsing rotated audit files directly.
+
+Impact:
+Admins and `security_curator` can view the current audit log safely. The endpoint ignores arbitrary `path` query parameters, tolerates invalid JSON lines, caps `limit` at 1000, and applies centralized redaction before returning entries. Rotated compressed audit logs are not browsed in this iteration.
