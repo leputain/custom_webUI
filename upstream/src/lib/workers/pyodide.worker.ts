@@ -1,4 +1,6 @@
-import { loadPyodide, type PyodideInterface } from 'pyodide';
+import type { PyodideInterface } from 'pyodide';
+
+type PyodideModule = typeof import('pyodide');
 
 declare global {
 	interface Window {
@@ -18,12 +20,24 @@ declare global {
 // ---------------------------------------------------------------------------
 
 let pyodideReady: Promise<void> | null = null;
+let pyodideModulePromise: Promise<PyodideModule> | null = null;
+
+async function getLoadPyodide() {
+	if (!pyodideModulePromise) {
+		const pyodideModulePath = `/pyodide/${'pyodide.mjs'}`;
+		pyodideModulePromise = import(/* @vite-ignore */ pyodideModulePath) as Promise<PyodideModule>;
+	}
+
+	const { loadPyodide } = await pyodideModulePromise;
+	return loadPyodide;
+}
 
 async function loadPyodideAndPackages(packages: string[] = []) {
 	self.stdout = null;
 	self.stderr = null;
 	self.result = null;
 
+	const loadPyodide = await getLoadPyodide();
 	self.pyodide = await loadPyodide({
 		indexURL: '/pyodide/',
 		stdout: (text) => {

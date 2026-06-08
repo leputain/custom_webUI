@@ -4,6 +4,21 @@
 
 ### Task
 
+Fix production frontend build and Docker image rebuild blocker.
+
+### Changed
+
+- Changed the Pyodide worker to load `/pyodide/pyodide.mjs` dynamically at runtime from the static Pyodide assets.
+- Kept `pyodide` as a type-only dependency in the worker, preventing Vite/Rollup from bundling the Node-oriented Pyodide package during production build.
+
+### Validation
+
+- Frontend smoke test: `4 passed`.
+- Filtered `svelte-check` diagnostics for `Settings.svelte`, `Settings.security.test.ts`, and `pyodide.worker.ts`: no diagnostics.
+- Local `npm run build`: passed.
+
+### Task
+
 Block all admin settings mutation controls for `security_curator`.
 
 ### Changed
