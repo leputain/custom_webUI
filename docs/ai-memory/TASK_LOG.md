@@ -4,6 +4,27 @@
 
 ### Task
 
+Investigate local UI responsiveness after the customized build.
+
+### Changed
+
+- Added compose passthroughs for `ENABLE_OLLAMA_API` and `AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST`.
+- Added those settings to `deploy/.env.example`.
+- Updated the ignored local `deploy/.env` to disable Ollama API because Ollama is not running on the host.
+
+### Validation
+
+- Measured fast local backend responses for `/health`, `/api/config`, and `/`.
+- Confirmed `host.docker.internal:11434` times out from inside the container.
+- Confirmed no local service is listening on host port `11434`.
+
+### Notes
+
+- Logs showed `/api/models` waiting on Ollama connection errors, which can make the interface feel less responsive after login.
+- The semantic audit changes are not the primary observed cause of the local UI delay.
+
+### Task
+
 Build and run the customized Open WebUI locally from the GitHub-synchronized repository.
 
 ### Changed
