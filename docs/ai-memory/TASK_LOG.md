@@ -4,6 +4,19 @@
 
 ### Task
 
+Localize and polish the GitHub repository presentation.
+
+### Changed
+
+- Rewrote the root `README.md` in Russian.
+- Added a clearer project overview, status table, directory structure, quick start, custom image build steps, development commands, security guidance, and licensing/branding notes.
+
+### Validation
+
+- Confirmed the README describes the pinned Open WebUI `v0.9.6` source, local deployment shape, security posture, and upstream license constraints.
+
+### Task
+
 Prepare the project for publication to `leputain/custom_webUI`.
 
 ### Changed
