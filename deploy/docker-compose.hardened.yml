@@ -1,0 +1,8 @@
+services:
+  open-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardened
+      args:
+        BASE_IMAGE: "${OPEN_WEBUI_HARDENED_BASE_IMAGE:-open-webui-custom:v0.9.6-ui}"
+    image: "${OPEN_WEBUI_HARDENED_IMAGE:-open-webui-custom:v0.9.6-ui-hardened}"

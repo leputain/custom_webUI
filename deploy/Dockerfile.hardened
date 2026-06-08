@@ -1,0 +1,23 @@
+ARG BASE_IMAGE=ghcr.io/open-webui/open-webui:v0.9.6
+FROM ${BASE_IMAGE}
+
+USER root
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get upgrade -y --no-install-recommends; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade \
+    "setuptools>=80,<81" \
+    "jaraco.context>=6.1.0,<7" \
+    "langchain-classic>=1.0.7,<1.1" \
+    "langchain-text-splitters>=1.1.2,<1.2" \
+    "nltk>=3.9.4,<4" \
+    "pillow>=12.2.0,<13" \
+    "pyarrow>=23.0.1,<24" \
+    "PyJWT>=2.12.0,<3" \
+    "python-multipart>=0.0.27,<0.1" \
+    "wheel>=0.46.2,<1"
+
+USER 0:0

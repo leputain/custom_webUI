@@ -1,0 +1,36 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.9.6
+    container_name: open-webui-custom
+    restart: unless-stopped
+    ports:
+      - "${OPEN_WEBUI_BIND:-127.0.0.1}:3000:8080"
+    environment:
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY}"
+      DEFAULT_USER_ROLE: "${DEFAULT_USER_ROLE:-pending}"
+      ENABLE_SIGNUP: "${ENABLE_SIGNUP:-false}"
+      ENABLE_PASSWORD_VALIDATION: "${ENABLE_PASSWORD_VALIDATION:-true}"
+      PASSWORD_VALIDATION_REGEX_PATTERN: "${PASSWORD_VALIDATION_REGEX_PATTERN}"
+      PASSWORD_VALIDATION_HINT: "${PASSWORD_VALIDATION_HINT}"
+      ENABLE_OPENAI_API_PASSTHROUGH: "${ENABLE_OPENAI_API_PASSTHROUGH:-false}"
+      ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS: "${ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS:-true}"
+      API_KEYS_ALLOWED_ENDPOINTS: "${API_KEYS_ALLOWED_ENDPOINTS:-/api/chat/completions,/api/v1/models}"
+      ENABLE_CODE_EXECUTION: "${ENABLE_CODE_EXECUTION:-true}"
+      CODE_EXECUTION_ENGINE: "${CODE_EXECUTION_ENGINE:-pyodide}"
+      ENABLE_CODE_INTERPRETER: "${ENABLE_CODE_INTERPRETER:-true}"
+      CODE_INTERPRETER_ENGINE: "${CODE_INTERPRETER_ENGINE:-pyodide}"
+      IFRAME_CSP: "${IFRAME_CSP}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui-data:/app/backend/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  open-webui-data:

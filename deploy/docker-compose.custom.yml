@@ -1,0 +1,10 @@
+services:
+  open-webui:
+    build:
+      context: ../upstream
+      dockerfile: Dockerfile
+      args:
+        USE_SLIM: "true"
+        UID: "${OPEN_WEBUI_UID:-1000}"
+        GID: "${OPEN_WEBUI_GID:-1000}"
+    image: open-webui-custom:v0.9.6-ui

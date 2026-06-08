@@ -1,0 +1,11 @@
+.env
+deploy/.env
+data/
+*.log
+
+upstream/node_modules/
+upstream/.svelte-kit/
+upstream/build/
+upstream/backend/venv/
+upstream/backend/.venv/
+upstream/backend/data/

@@ -1,0 +1,177 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.71.0"
+  },
+  "ReportID": "019ea642-c286-73d4-914b-122d73e4557f",
+  "CreatedAt": "2026-06-08T08:04:13.574253192Z",
+  "ArtifactName": "/src",
+  "ArtifactType": "filesystem",
+  "Results": [
+    {
+      "Target": "upstream/Dockerfile",
+      "Class": "config",
+      "Type": "dockerfile",
+      "MisconfSummary": {
+        "Successes": 19,
+        "Failures": 2
+      },
+      "Misconfigurations": [
+        {
+          "Type": "Dockerfile Security Check",
+          "ID": "DS-0031",
+          "Title": "Secrets passed via `build-args` or envs or copied secret files",
+          "Description": "Passing secrets via `build-args` or envs or copying secret files can leak them out",
+          "Message": "Possible exposure of secret env \"OPENAI_API_KEY\" in ENV",
+          "Namespace": "builtin.dockerfile.DS031",
+          "Query": "data.builtin.dockerfile.DS031.deny",
+          "Resolution": "Use secret mount if secrets are needed during image build. Use volume mount if secret files are needed during container runtime.",
+          "Severity": "CRITICAL",
+          "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0031",
+          "References": [
+            "https://docs.docker.com/build/building/secrets/",
+            "https://avd.aquasec.com/misconfig/ds-0031"
+          ],
+          "Status": "FAIL",
+          "CauseMetadata": {
+            "Provider": "Dockerfile",
+            "Service": "general",
+            "StartLine": 80,
+            "EndLine": 84,
+            "Code": {
+              "Lines": [
+                {
+                  "Number": 80,
+                  "Content": "ENV OPENAI_API_KEY=\"\" \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[38;5;64mENV\u001b[0m \u001b[38;5;33mOPENAI_API_KEY\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;37m\"\"\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": true,
+                  "LastCause": false
+                },
+                {
+                  "Number": 81,
+                  "Content": "    WEBUI_SECRET_KEY=\"\" \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mWEBUI_SECRET_KEY\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;37m\"\"\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 82,
+                  "Content": "    SCARF_NO_ANALYTICS=true \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mSCARF_NO_ANALYTICS\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;33mtrue\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 83,
+                  "Content": "    DO_NOT_TRACK=true \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mDO_NOT_TRACK\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;33mtrue\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 84,
+                  "Content": "    ANONYMIZED_TELEMETRY=false",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mANONYMIZED_TELEMETRY\u001b[0m\u001b[38;5;245m=\u001b[0mfalse",
+                  "FirstCause": false,
+                  "LastCause": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "Type": "Dockerfile Security Check",
+          "ID": "DS-0031",
+          "Title": "Secrets passed via `build-args` or envs or copied secret files",
+          "Description": "Passing secrets via `build-args` or envs or copying secret files can leak them out",
+          "Message": "Possible exposure of secret env \"WEBUI_SECRET_KEY\" in ENV",
+          "Namespace": "builtin.dockerfile.DS031",
+          "Query": "data.builtin.dockerfile.DS031.deny",
+          "Resolution": "Use secret mount if secrets are needed during image build. Use volume mount if secret files are needed during container runtime.",
+          "Severity": "CRITICAL",
+          "PrimaryURL": "https://avd.aquasec.com/misconfig/ds-0031",
+          "References": [
+            "https://docs.docker.com/build/building/secrets/",
+            "https://avd.aquasec.com/misconfig/ds-0031"
+          ],
+          "Status": "FAIL",
+          "CauseMetadata": {
+            "Provider": "Dockerfile",
+            "Service": "general",
+            "StartLine": 80,
+            "EndLine": 84,
+            "Code": {
+              "Lines": [
+                {
+                  "Number": 80,
+                  "Content": "ENV OPENAI_API_KEY=\"\" \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[38;5;64mENV\u001b[0m \u001b[38;5;33mOPENAI_API_KEY\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;37m\"\"\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": true,
+                  "LastCause": false
+                },
+                {
+                  "Number": 81,
+                  "Content": "    WEBUI_SECRET_KEY=\"\" \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mWEBUI_SECRET_KEY\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;37m\"\"\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 82,
+                  "Content": "    SCARF_NO_ANALYTICS=true \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mSCARF_NO_ANALYTICS\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;33mtrue\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 83,
+                  "Content": "    DO_NOT_TRACK=true \\",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mDO_NOT_TRACK\u001b[0m\u001b[38;5;245m=\u001b[0m\u001b[38;5;33mtrue\u001b[0m \u001b[38;5;124m\\",
+                  "FirstCause": false,
+                  "LastCause": false
+                },
+                {
+                  "Number": 84,
+                  "Content": "    ANONYMIZED_TELEMETRY=false",
+                  "IsCause": true,
+                  "Annotation": "",
+                  "Truncated": false,
+                  "Highlighted": "\u001b[0m    \u001b[38;5;33mANONYMIZED_TELEMETRY\u001b[0m\u001b[38;5;245m=\u001b[0mfalse",
+                  "FirstCause": false,
+                  "LastCause": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
