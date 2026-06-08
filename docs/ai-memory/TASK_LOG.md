@@ -4,6 +4,29 @@
 
 ### Task
 
+Build and run the customized Open WebUI locally from the GitHub-synchronized repository.
+
+### Changed
+
+- Created ignored local `/tmp/custom_webUI_push.OhEYTd/repo/deploy/.env` with a generated `WEBUI_SECRET_KEY`.
+- Rebuilt `open-webui-custom:v0.9.6-ui` from current `upstream/` source.
+- Rebuilt `open-webui-custom:v0.9.6-ui-hardened` on top of the new UI image.
+- Recreated and started container `open-webui-custom` on `127.0.0.1:3000`.
+
+### Validation
+
+- Docker build completed successfully; Svelte/Vite emitted upstream warnings but no build error.
+- Container healthcheck reached `healthy`.
+- `http://127.0.0.1:3000/health` returned `{"status":true}`.
+- `http://127.0.0.1:3000/` returned `200 OK`.
+
+### Notes
+
+- The running image is `open-webui-custom:v0.9.6-ui-hardened`.
+- The existing Docker named volume `deploy_open-webui-data` was preserved.
+
+### Task
+
 Localize and polish the GitHub repository presentation.
 
 ### Changed
